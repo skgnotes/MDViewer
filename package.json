@@ -1,0 +1,19 @@
+{
+  "name": "mdviewer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "description": "A clean, minimal Markdown viewer for macOS",
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.9.6"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.9.1",
+    "highlight.js": "^11.11.1",
+    "marked": "^17.0.1"
+  }
+}

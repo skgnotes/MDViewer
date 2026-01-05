@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MDViewer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-color: #ffffff;
+      --text-color: #24292f;
+      --text-secondary: #57606a;
+      --border-color: #d0d7de;
+      --code-bg: #f6f8fa;
+      --link-color: #0969da;
+      --blockquote-border: #d0d7de;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #0d1117;
+        --text-color: #e6edf3;
+        --text-secondary: #8b949e;
+        --border-color: #30363d;
+        --code-bg: #161b22;
+        --link-color: #58a6ff;
+        --blockquote-border: #3b434b;
+      }
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Welcome screen */
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 40px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    .welcome h1 {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-color);
+      margin-bottom: 16px;
+    }
+
+    .welcome p {
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .welcome .shortcut {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      background: var(--code-bg);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .welcome-hidden {
+      display: none !important;
+    }
+
+    /* Content area */
+    .content {
+      display: none;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 60px 60px;
+    }
+
+    .content-visible {
+      display: block !important;
+    }
+
+    /* Drop zone overlay */
+    .drop-zone {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg-color);
+      opacity: 0.95;
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--text-secondary);
+      border: 3px dashed var(--border-color);
+      margin: 20px;
+      border-radius: 12px;
+    }
+
+    .drop-zone.active {
+      display: flex;
+    }
+
+    /* Markdown Styles */
+    .content h1, .content h2, .content h3,
+    .content h4, .content h5, .content h6 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .content h1 { font-size: 2em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border-color); }
+    .content h2 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border-color); }
+    .content h3 { font-size: 1.25em; }
+    .content h4 { font-size: 1em; }
+    .content h5 { font-size: 0.875em; }
+    .content h6 { font-size: 0.85em; color: var(--text-secondary); }
+
+    .content h1:first-child { margin-top: 0; }
+
+    .content p {
+      margin-bottom: 16px;
+    }
+
+    .content a {
+      color: var(--link-color);
+      text-decoration: none;
+    }
+
+    .content a:hover {
+      text-decoration: underline;
+    }
+
+    .content strong {
+      font-weight: 600;
+    }
+
+    .content ul, .content ol {
+      margin-bottom: 16px;
+      padding-left: 2em;
+    }
+
+    .content li {
+      margin-bottom: 4px;
+    }
+
+    .content li > p {
+      margin-bottom: 8px;
+    }
+
+    .content blockquote {
+      margin: 0 0 16px 0;
+      padding: 0 1em;
+      color: var(--text-secondary);
+      border-left: 4px solid var(--blockquote-border);
+    }
+
+    .content code {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 85%;
+      background: var(--code-bg);
+      padding: 0.2em 0.4em;
+      border-radius: 6px;
+    }
+
+    .content pre {
+      margin-bottom: 16px;
+      padding: 16px;
+      overflow-x: auto;
+      background: var(--code-bg);
+      border-radius: 8px;
+      line-height: 1.45;
+    }
+
+    .content pre code {
+      background: none;
+      padding: 0;
+      font-size: 14px;
+    }
+
+    .content hr {
+      height: 1px;
+      margin: 24px 0;
+      background: var(--border-color);
+      border: none;
+    }
+
+    .content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+
+    .content table {
+      width: 100%;
+      margin-bottom: 16px;
+      border-collapse: collapse;
+      overflow: hidden;
+    }
+
+    .content table th,
+    .content table td {
+      padding: 8px 16px;
+      border: 1px solid var(--border-color);
+      text-align: left;
+    }
+
+    .content table th {
+      font-weight: 600;
+      background: var(--code-bg);
+    }
+
+    .content table tr:nth-child(even) {
+      background: var(--code-bg);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
+    }
+
+    /* Selection */
+    ::selection {
+      background: var(--link-color);
+      color: white;
+    }
+
+    /* Search bar */
+    .search-bar {
+      display: none;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1001;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-bar.active {
+      display: flex;
+    }
+
+    .search-bar input {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 14px;
+      color: var(--text-color);
+      outline: none;
+      width: 220px;
+    }
+
+    .search-bar input:focus {
+      border-color: var(--link-color);
+    }
+
+    .search-bar .search-count {
+      font-size: 12px;
+      color: var(--text-secondary);
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .search-bar button {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      color: var(--text-color);
+      font-size: 14px;
+    }
+
+    .search-bar button:hover {
+      background: var(--border-color);
+    }
+
+    .search-bar .close-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      padding: 2px 6px;
+    }
+
+    /* Search highlight */
+    .search-highlight {
+      background: #ffeb3b;
+      color: #000;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+
+    .search-highlight.current {
+      background: #ff9800;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .search-highlight {
+        background: #f9a825;
+        color: #000;
+      }
+      .search-highlight.current {
+        background: #ff6f00;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="welcome" id="welcome">
+    <h1>MDViewer</h1>
+    <p>Drop a Markdown file here to view</p>
+    <p>or press <span class="shortcut">Cmd+O</span> to open</p>
+  </div>
+
+  <div class="content" id="content"></div>
+
+  <div class="drop-zone" id="dropZone">Drop Markdown file here</div>
+
+  <div class="search-bar" id="searchBar">
+    <input type="text" id="searchInput" placeholder="Search..." autocomplete="off">
+    <span class="search-count" id="searchCount"></span>
+    <button id="searchPrev" title="Previous (Cmd+Shift+G)">&#9650;</button>
+    <button id="searchNext" title="Next (Cmd+G)">&#9660;</button>
+    <button class="close-btn" id="searchClose" title="Close (Esc)">&times;</button>
+  </div>
+
+  <script>
+    const { invoke } = window.__TAURI__.core;
+    const { open } = window.__TAURI__.dialog;
+
+    const welcome = document.getElementById('welcome');
+    const content = document.getElementById('content');
+    const dropZone = document.getElementById('dropZone');
+    const searchBar = document.getElementById('searchBar');
+    const searchInput = document.getElementById('searchInput');
+    const searchCount = document.getElementById('searchCount');
+    const searchPrev = document.getElementById('searchPrev');
+    const searchNext = document.getElementById('searchNext');
+    const searchClose = document.getElementById('searchClose');
+
+    // Search state
+    let searchMatches = [];
+    let currentMatchIndex = -1;
+    let originalContent = '';
+
+    // Configure marked
+    marked.setOptions({
+      gfm: true,
+      breaks: false,
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            return hljs.highlight(code, { language: lang }).value;
+          } catch (e) {}
+        }
+        return hljs.highlightAuto(code).value;
+      }
+    });
+
+    // Render markdown content
+    function renderMarkdown(text) {
+      content.innerHTML = marked.parse(text);
+      welcome.classList.add('welcome-hidden');
+      content.classList.add('content-visible');
+
+      // Make links open in default browser
+      content.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', async (e) => {
+          e.preventDefault();
+          const href = link.getAttribute('href');
+          if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+            await window.__TAURI__.shell.open(href);
+          }
+        });
+      });
+    }
+
+    // Open file from path
+    async function openFile(path) {
+      try {
+        const contents = await invoke('read_file', { path });
+        renderMarkdown(contents);
+        document.title = path.split('/').pop() + ' - MDViewer';
+      } catch (err) {
+        console.error('Failed to read file:', err);
+      }
+    }
+
+    // Expose for Rust to call
+    window.openFileFromPath = openFile;
+
+    // File open dialog
+    async function openFileDialog() {
+      try {
+        const selected = await open({
+          multiple: false,
+          filters: [{
+            name: 'Markdown',
+            extensions: ['md', 'markdown', 'mdown', 'mkd', 'txt']
+          }]
+        });
+        if (selected) {
+          await openFile(selected);
+        }
+      } catch (err) {
+        console.error('Failed to open file dialog:', err);
+      }
+    }
+
+    // Search functions
+    function openSearch() {
+      if (!content.classList.contains('content-visible')) return;
+      searchBar.classList.add('active');
+      searchInput.focus();
+      searchInput.select();
+    }
+
+    function closeSearch() {
+      searchBar.classList.remove('active');
+      clearHighlights();
+      searchInput.value = '';
+      searchCount.textContent = '';
+      searchMatches = [];
+      currentMatchIndex = -1;
+    }
+
+    function clearHighlights() {
+      content.querySelectorAll('.search-highlight').forEach(el => {
+        const parent = el.parentNode;
+        parent.replaceChild(document.createTextNode(el.textContent), el);
+        parent.normalize();
+      });
+    }
+
+    function performSearch(query) {
+      clearHighlights();
+      searchMatches = [];
+      currentMatchIndex = -1;
+
+      if (!query || query.length < 1) {
+        searchCount.textContent = '';
+        return;
+      }
+
+      const walker = document.createTreeWalker(
+        content,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+      );
+
+      const textNodes = [];
+      let node;
+      while (node = walker.nextNode()) {
+        if (node.textContent.trim()) {
+          textNodes.push(node);
+        }
+      }
+
+      const regex = new RegExp(escapeRegex(query), 'gi');
+
+      textNodes.forEach(textNode => {
+        const text = textNode.textContent;
+        const matches = [...text.matchAll(regex)];
+
+        if (matches.length > 0) {
+          const fragment = document.createDocumentFragment();
+          let lastIndex = 0;
+
+          matches.forEach(match => {
+            // Text before match
+            if (match.index > lastIndex) {
+              fragment.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+            }
+            // Highlighted match
+            const span = document.createElement('span');
+            span.className = 'search-highlight';
+            span.textContent = match[0];
+            fragment.appendChild(span);
+            searchMatches.push(span);
+            lastIndex = match.index + match[0].length;
+          });
+
+          // Text after last match
+          if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+          }
+
+          textNode.parentNode.replaceChild(fragment, textNode);
+        }
+      });
+
+      if (searchMatches.length > 0) {
+        currentMatchIndex = 0;
+        updateCurrentMatch();
+      }
+      updateSearchCount();
+    }
+
+    function escapeRegex(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function updateSearchCount() {
+      if (searchMatches.length === 0) {
+        searchCount.textContent = searchInput.value ? 'No results' : '';
+      } else {
+        searchCount.textContent = `${currentMatchIndex + 1} of ${searchMatches.length}`;
+      }
+    }
+
+    function updateCurrentMatch() {
+      searchMatches.forEach((match, index) => {
+        match.classList.toggle('current', index === currentMatchIndex);
+      });
+      if (searchMatches[currentMatchIndex]) {
+        searchMatches[currentMatchIndex].scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }
+
+    function nextMatch() {
+      if (searchMatches.length === 0) return;
+      currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
+      updateCurrentMatch();
+      updateSearchCount();
+    }
+
+    function prevMatch() {
+      if (searchMatches.length === 0) return;
+      currentMatchIndex = (currentMatchIndex - 1 + searchMatches.length) % searchMatches.length;
+      updateCurrentMatch();
+      updateSearchCount();
+    }
+
+    // Search event listeners
+    searchInput.addEventListener('input', (e) => {
+      performSearch(e.target.value);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          prevMatch();
+        } else {
+          nextMatch();
+        }
+      } else if (e.key === 'Escape') {
+        closeSearch();
+      }
+    });
+
+    searchNext.addEventListener('click', nextMatch);
+    searchPrev.addEventListener('click', prevMatch);
+    searchClose.addEventListener('click', closeSearch);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.metaKey && e.key === 'o') {
+        e.preventDefault();
+        openFileDialog();
+      } else if (e.metaKey && e.key === 'f') {
+        e.preventDefault();
+        openSearch();
+      } else if (e.metaKey && e.key === 'g') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          prevMatch();
+        } else {
+          nextMatch();
+        }
+      } else if (e.key === 'Escape') {
+        closeSearch();
+      }
+    });
+
+    // Drag and drop visual feedback
+    let dragCounter = 0;
+
+    document.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      dropZone.classList.add('active');
+    });
+
+    document.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        dropZone.classList.remove('active');
+      }
+    });
+
+    document.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    document.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      dropZone.classList.remove('active');
+      // File handling is done by Tauri's on_window_event
+    });
+
+    // Listen for file-opened event from Rust backend
+    window.__TAURI__.event.listen('file-opened', async (event) => {
+      if (event.payload) {
+        await openFile(event.payload);
+      }
+    });
+  </script>
+</body>
+</html>
