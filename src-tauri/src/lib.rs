@@ -30,9 +30,13 @@ pub fn run() {
                 let file_path = args[1].clone();
                 let app_handle = app.handle().clone();
                 std::thread::spawn(move || {
-                    std::thread::sleep(std::time::Duration::from_millis(500));
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let _ = window.emit("file-opened", &file_path);
+                    // Emit multiple times with increasing delays to ensure JS is ready
+                    let delays = [300, 500, 800, 1200];
+                    for delay in delays {
+                        std::thread::sleep(std::time::Duration::from_millis(delay));
+                        if let Some(window) = app_handle.get_webview_window("main") {
+                            let _ = window.emit("file-opened", &file_path);
+                        }
                     }
                 });
             }
